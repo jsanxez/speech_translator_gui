@@ -24,7 +24,7 @@ class App():
     frames = []  
     def __init__(self, master):
         self.isrecording = False
-
+        self.isrecording = True
         # nested frames
         self.frame1 = tk.Frame(main)
 
@@ -68,6 +68,7 @@ class App():
                 rate=self.fs,
                 frames_per_buffer=self.chunk,
                 input=True)
+
         self.isrecording = True
 
         # Agregando hora de inicio:
@@ -76,6 +77,7 @@ class App():
 
         print('Recording')
         self.l3.configure(text="Grabando...")
+        # Creando hilo
         t = threading.Thread(target=self.record)
         t.start()
 
@@ -107,6 +109,9 @@ class App():
             audio = self.r.record(source)
             try:
                 text = self.r.recognize_google(audio, language='es-ES')
+                c = canvas.Canvas("hola_mundo.pdf", pagesize=A4)
+                c.drawString(0, 830, text)
+                c.save()
                 with open(self.file_path, 'a') as outfile:
                     outfile.write(text)
                     outfile.write(time.strftime("\nHora final: %d-%m-%Y %H:%M:%S"))
@@ -120,9 +125,8 @@ class App():
         while self.isrecording:
             data = self.stream.read(self.chunk)
             self.frames.append(data)
-        # Deteniendo la grabacion:
         if self.isrecording is False:
-            print("Dentro del hilo que graba(estado:false)\n")
+            # Deteniendo la grabacion:
             self.stream.stop_stream()
             self.stream.close()
             # Finaliza la interfaz PortAudio
@@ -154,6 +158,3 @@ main.geometry('600x250')
 app = App(main)
 main.mainloop()
 
-c = canvas.Canvas("hola_mundo.pdf", pagesize=A4)
-c.drawString(0, 830, "Hola, mundo!")
-c.save()
