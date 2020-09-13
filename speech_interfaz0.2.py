@@ -7,9 +7,9 @@ import speech_recognition as sr
 # pdf
 from reportlab.pdfgen import  canvas
 from reportlab.lib.pagesizes import A4
-# Open
+# Open file
 from tkinter import filedialog
-# Save
+# Save as
 from tkinter.filedialog import asksaveasfile
 
 
@@ -19,7 +19,6 @@ class App():
     channels = 2
     fs = 44100  
     r = sr.Recognizer()
-    #file_path = ['']
     file_path = ''
     
     frames = []  
@@ -35,7 +34,7 @@ class App():
         self.l1 = tk.Label(self.frame1, text="Documento de salida (.pdf): ")
         # check
         self.state_var = tk.IntVar()
-        self.audio_state = tk.Checkbutton(main, text=" Guardar audio?", variable=self.state_var)
+        self.audio_state = tk.Checkbutton(main, text=" Renombrar audio?", variable=self.state_var)
         self.entry_s = tk.Text(main, height= 5, width=50, wrap="word")
         self.l2 = tk.Label(main, text="Asunto de la reunión: ")
         self.l3 = tk.Label(main, text="Estado...")
@@ -71,9 +70,9 @@ class App():
                 input=True)
         self.isrecording = True
 
-        # Guardando hora de inicio:
+        # Agregando hora de inicio:
         with open(self.file_path, 'w') as outfile:
-            outfile.write(time.strftime("Hora inicio: %d-%M-%Y %H:%M:%S\n"))
+            outfile.write(time.strftime("Hora inicio: %d-%m-%Y %H:%M:%S\n"))
 
         print('Recording')
         self.l3.configure(text="Grabando...")
@@ -82,13 +81,20 @@ class App():
 
     def stoprecording(self):
         self.isrecording = False
+
         print('recording complete')
         self.l3.configure(text="Finalizado.")
+        # Quitando el nombre del pdf del path:
+        index = self.file_path.rindex('/')
+        self.audioname = self.file_path[:index+1]
+        if self.state_var.get() is not 0:
+            index = self.file_path.rindex('.')
+            self.audioname = self.file_path[:index+1] + "wav"
+        else:
+            self.audioname += time.strftime("reunion%d_%m_%Y_%H%M%S.wav")
 
-        self.audioname = time.strftime("reunion%d_%M_%Y_%H%M%S")
-        self.audioname = self.audioname + ".wav"
+        # Guarda el audio de salida:
         wf = wave.open(self.audioname, 'wb')
-
         wf.setnchannels(self.channels)
         wf.setsampwidth(self.p.get_sample_size(self.sample_format))
         wf.setframerate(self.fs)
@@ -103,7 +109,7 @@ class App():
                 text = self.r.recognize_google(audio, language='es-ES')
                 with open(self.file_path, 'a') as outfile:
                     outfile.write(text)
-                    outfile.write(time.strftime("\nHora final: %d-%M-%Y %H:%M:%S"))
+                    outfile.write(time.strftime("\nHora final: %d-%m-%Y %H:%M:%S"))
             except:
                 self.l3.configure(text="Error en el reconocimiento!")
         #---- fin de la supuesta funcion
@@ -114,6 +120,13 @@ class App():
         while self.isrecording:
             data = self.stream.read(self.chunk)
             self.frames.append(data)
+        # Deteniendo la grabacion:
+        if self.isrecording is False:
+            print("Dentro del hilo que graba(estado:false)\n")
+            self.stream.stop_stream()
+            self.stream.close()
+            # Finaliza la interfaz PortAudio
+            self.p.terminate()
 
     def browser_files(self):
         filename = filedialog.askopenfilename(
