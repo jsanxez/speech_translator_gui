@@ -19,7 +19,8 @@ class App():
     channels = 2
     fs = 44100  
     r = sr.Recognizer()
-    file_path = ""
+    #file_path = ['']
+    file_path = ''
     
     frames = []  
     def __init__(self, master):
@@ -28,10 +29,10 @@ class App():
         # nested frames
         self.frame1 = tk.Frame(main)
 
+        self.btn_explorer = tk.Button(self.frame1, text='Guardar como...', command=self.save_file)
         self.button1 = tk.Button(main, text='Grabar', bg='blue', fg='white', command=self.startrecording)
         self.button2 = tk.Button(main, text='Detener', bg='red', fg='black', command=self.stoprecording)
         self.l1 = tk.Label(self.frame1, text="Documento de salida (.pdf): ")
-        self.btn_explorer = tk.Button(self.frame1, text='Guardar como...', command=self.save_file)
         # check
         self.state_var = tk.IntVar()
         self.audio_state = tk.Checkbutton(main, text=" Guardar audio?", variable=self.state_var)
@@ -62,18 +63,18 @@ class App():
 
     def startrecording(self):
         self.p = pyaudio.PyAudio()  
-        self.stream = self.p.open(format=self.sample_format,channels=self.channels,rate=self.fs,frames_per_buffer=self.chunk,input=True)
+        self.stream = self.p.open(
+                format=self.sample_format,
+                channels=self.channels,
+                rate=self.fs,
+                frames_per_buffer=self.chunk,
+                input=True)
         self.isrecording = True
-
-        #self.filename = self.filename_entry.get()
-        self.filename = self.file_path
-        print(f"Nombre y ruta del archivo pdf(fuera de la funcion): {self.file_path}\n")
-        #self.filename = self.filename + ".txt"
 
         # Guardando hora de inicio:
         with open(self.file_path, 'w') as outfile:
             outfile.write(time.strftime("Hora inicio: %d-%M-%Y %H:%M:%S\n"))
-        
+
         print('Recording')
         self.l3.configure(text="Grabando...")
         t = threading.Thread(target=self.record)
@@ -83,10 +84,8 @@ class App():
         self.isrecording = False
         print('recording complete')
         self.l3.configure(text="Finalizado.")
-        self.filename = self.file_path
-        #self.filename = self.filename + ".txt"
 
-        self.audioname = time.strftime("reunion_%d-%M-%Y_%H_%M_%S")
+        self.audioname = time.strftime("reunion%d_%M_%Y_%H%M%S")
         self.audioname = self.audioname + ".wav"
         wf = wave.open(self.audioname, 'wb')
 
@@ -102,7 +101,7 @@ class App():
             audio = self.r.record(source)
             try:
                 text = self.r.recognize_google(audio, language='es-ES')
-                with open(self.filename, 'a') as outfile:
+                with open(self.file_path, 'a') as outfile:
                     outfile.write(text)
                     outfile.write(time.strftime("\nHora final: %d-%M-%Y %H:%M:%S"))
             except:
@@ -126,12 +125,12 @@ class App():
                 "*.*")))
 
     def save_file(self):
+        global file_path
         files = [("All files", "*.*"),
                 ("PDF Files", "*.pdf"),
                 ("Text Document", "*.txt")]
         file = asksaveasfile(filetypes = files, defaultextension=files)
-        file_path = file.name
-        print(f"Nombre y ruta del archivo dentro de la funcion: {file_path}")
+        self.file_path = file.name
 
 
 
